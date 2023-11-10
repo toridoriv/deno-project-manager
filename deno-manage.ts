@@ -12,13 +12,6 @@ export const DenoManage = new Command()
   )
   .option("", "", {})
   .action(async function (options) {
-    // const paths = getPublicFilePaths(options.manageBinDir);
-
-    // paths.forEach((v) => {
-    //   const here = resolve("./");
-    //   console.log(here);
-    //   console.log(relative(here, v));
-    // });
     const modules = await Promise.all(
       getPublicFilePaths(options.manageBinDir).map(getDefaultImport),
     );
