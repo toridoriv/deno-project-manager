@@ -16,18 +16,6 @@ export function isValidCommand(
   );
 }
 
-export function isCommandWithFlags(
-  command: DenoManageCommand<any>,
-): command is DenoManageCommand<Flags> {
-  return command.flags ? true : false;
-}
-
-export function isCommandWithoutFlags(
-  command: DenoManageCommand<any>,
-): command is DenoManageCommand<null> {
-  return command.flags ? false : true;
-}
-
 export function toCliffyCommand(command: DenoManageCommand<Flags>) {
   const cmd = new Command().name(command.name).description(command.description);
 
