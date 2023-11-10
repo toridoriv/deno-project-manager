@@ -1,10 +1,10 @@
 // deno-lint-ignore-file no-explicit-any ban-types
 
-export interface DenoManageCommand<F extends Flags | null = null> {
+export interface DenoManageCommand<F> {
   name: string;
   description: string;
   action: Action<F>;
-  flags?: F extends null ? undefined : F;
+  flags?: F extends Flags ? F : never;
 }
 
 export interface DenoManageFlag {
@@ -17,11 +17,11 @@ export interface DenoManageFlag {
 
 export type Flags = Record<string, DenoManageFlag>;
 
-export function defineCommand<T extends DenoManageCommand<any>>(command: T) {
+export function defineCommand<F extends Flags>(command: DenoManageCommand<F>) {
   return command;
 }
 
-type Action<F extends Flags | null> = F extends Flags
+type Action<F> = F extends Flags
   ? (options: Expand<InferOptionsFromFlag<F>>) => void | Promise<void>
   : () => void | Promise<void>;
 
