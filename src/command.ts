@@ -23,7 +23,11 @@ export function toCliffyCommand(command: DenoManageCommand<Flags>) {
     for (const k in command.flags) {
       const flag = command.flags[k];
 
-      cmd.option(`-${flag.abbreviation}, --${flag.name}`, flag.description, flag.options);
+      cmd.option(
+        `-${flag.abbreviation}, --${flag.name} <${flag.name}:${flag.type}>`,
+        flag.description,
+        flag.options,
+      );
     }
   }
 
