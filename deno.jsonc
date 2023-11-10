@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "keyofStringsOnly": false,
+    "lib": [
+      "deno.window",
+      "deno.unstable"
+    ],
+    "noErrorTruncation": true
+  },
+  "fmt": {
+    "indentWidth": 2,
+    "lineWidth": 90,
+    "proseWrap": "preserve",
+    "semiColons": true,
+    "singleQuote": false,
+    "useTabs": false
+  },
+  "lint": {
+    "rules": {
+      "exclude": [
+        "no-namespace",
+        "no-empty-interface"
+      ]
+    }
+  },
+  "tasks": {}
+}
