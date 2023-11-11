@@ -8,8 +8,19 @@ import {
 } from "https://deno.land/std@0.206.0/fs/walk.ts";
 import { relative } from "https://deno.land/std@0.206.0/path/relative.ts";
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/mod.ts";
-import { DenoManageCommand, Flags } from "./mod.ts";
+import { DenoManageCommand, DenoManageFlags } from "./mod.ts";
 
+type GetCommandHandlerArgs<C extends Command<any, any, any, any>> = [
+  this: C,
+  ...Parameters<Parameters<C["action"]>[0]>,
+];
+
+type GetCommandHandlerOptions<C extends Command<any, any, any, any>> =
+  GetCommandHandlerArgs<C>[1];
+
+/**
+ * An utility module for filesystem operations.
+ */
 const filesystem = (() => {
   const WALK_SYNC_OPTIONS: WalkOptions = {
     exts: [".ts", ".js", ".mjs"],
@@ -23,11 +34,31 @@ const filesystem = (() => {
   }
 
   return {
+    /**
+     * Imports the default export from a given module path.
+     *
+     * This function takes a module path, constructs the full import path based on the current file location,
+     * imports the module, and returns the default export.
+     *
+     * It replaces the "file://" prefix and "/deno-manage.ts" suffix from the current file URL
+     * to build the relative path to the target module.
+     *
+     * @param path - The module path to import
+     * @returns The default export from the imported module
+     *
+     * @example
+     * ```ts
+     * const myModule = await filesystem.getDefaultImport('./path/to/module.ts');
+     * ```
+     */
     async getDefaultImport(path: string) {
-      const here = import.meta.url.replace("file://", "").replace("/deno-manage.ts", "");
+      const here = import.meta.url
+        .replace("file://", "")
+        .replace("/deno-manage.ts", "");
       const there = Deno.cwd();
       const rel = relative(here, there);
-      const module = await import(`${rel}/${path}`);
+      const modulePath = rel === "" ? `./${path}` : `${rel}/${path}`;
+      const module = await import(modulePath);
 
       return module.default;
     },
@@ -60,6 +91,9 @@ const filesystem = (() => {
   };
 })();
 
+/**
+ * An utility module for subcommand related operations.
+ */
 const subcommand = (() => {
   const REQUIRED_PROPERTIES = ["name", "description", "action"];
 
@@ -97,9 +131,36 @@ const subcommand = (() => {
         Object.prototype.hasOwnProperty.call(value, key)
       );
     },
-
-    toCliffy(command: DenoManageCommand<Flags>) {
-      const cmd = new Command().name(command.name).description(command.description);
+    /**
+     * Converts a {@link DenoManageCommand} to a Cliffy {@link Command}.
+     *
+     * This function takes a {@link DenoManageCommand} object containing the definition of a subcommand,
+     * and returns a Cliffy {@link Command} instance for that subcommand.
+     *
+     * It copies over the name, description, and action from the {@link DenoManageCommand}.
+     *
+     * If the {@link DenoManageCommand} has flags, it loops through and registers them with the Cliffy {@link Command}
+     * using the .option() method.
+     *
+     * Finally, it ignores the types and attaches the action function to the Cliffy {@link Command}.
+     *
+     * @param command - The {@link DenoManageCommand} to convert
+     * @returns A Cliffy {@link Command} instance for the subcommand
+     *
+     * @example
+     * ```ts
+     * const denoCommand = {
+     *   name: 'build',
+     *   // ...
+     * };
+     *
+     * const cliffyCommand = subcommand.toCliffy(denoCommand);
+     * ```
+     */
+    toCliffy(command: DenoManageCommand<DenoManageFlags>) {
+      const cmd = new Command()
+        .name(command.name)
+        .description(command.description);
 
       if (command.flags) {
         for (const k in command.flags) {
@@ -121,10 +182,52 @@ const subcommand = (() => {
   };
 })();
 
+/**
+ * Main utility functions for `deno-manage`.
+ */
 const main = (() => {
   return {
+    /**
+     * The path to the directory containing subcommand scripts.
+     *
+     * This constant contains the path to the directory where the subcommand
+     * script files are located.
+     *
+     * It first checks the DENO_MANAGE_BIN_DIR environment variable, and falls back
+     * to "./bin" if not set.
+     */
     MANAGE_BIN_DIR: Deno.env.get("DENO_MANAGE_BIN_DIR") || "./bin",
-    registerSubcommands(command: Command<any, any, any>, subcommands: Command[]) {
+    /**
+     * Registers subcommand Command objects with the main Command.
+     *
+     * This function takes the main Command instance and an array of subcommand
+     * Command objects. It loops through the subcommand array and registers each one
+     * with the main command using the .command() method.
+     *
+     * This allows attaching the subcommand Command objects to the main CLI Command
+     * so they can be executed.
+     *
+     * @param command - The main Command instance
+     * @param subcommands - Array of subcommand Command objects
+     *
+     * @example
+     *
+     * ```ts
+     * import { Command } from 'cliffy';
+     *
+     * const main = new Command();
+     * const sub1 = new Command();
+     * const sub2 = new Command();
+     *
+     * const subcommands = [sub1, sub2];
+     *
+     * registerSubcommands(main, subcommands);
+     * ```
+     */
+    registerSubcommands(
+      command: Command<any, any, any>,
+      subcommands: Command[],
+    ) {
       subcommands.forEach((subcommand) => {
         command.command(subcommand.getName(), subcommand);
       });
@@ -134,17 +237,35 @@ const main = (() => {
 
 export const DenoManage = new Command()
   .name("deno-manage")
+  .description("A CLI project manager for Deno.")
+  .version("0.1.0")
   .env(
     "DENO_MANAGE_BIN_DIR=<path:string>",
     "The scripts directory of your project",
-    { prefix: "DENO_", required: true },
+    { prefix: "DENO_", required: true, global: true },
   )
+  .env(
+    "DENO_MANAGE_PROJECT_ID=<id:string>",
+    "The id of your project in Deno Deploy.",
+    { prefix: "DENO_", required: true, global: true },
+  )
+  .env(
+    "DENO_DEPLOY_TOKEN=<token:string>",
+    "The API token to use in Deno Deploy.",
+    { prefix: "DENO_", required: true, global: true },
+  )
+  .option("-n, --dry-run", "Dry run the process of a given command.", {
+    default: false,
+    global: true,
+  })
   .action(function () {
     this.showHelp();
   });
 
 const modules = await Promise.all(
-  filesystem.getPublicPaths(main.MANAGE_BIN_DIR).map(filesystem.getDefaultImport),
+  filesystem
+    .getPublicPaths(main.MANAGE_BIN_DIR)
+    .map(filesystem.getDefaultImport),
 );
 
 const subcommands = modules.filter(subcommand.isValid).map(subcommand.toCliffy);
@@ -156,3 +277,5 @@ if (import.meta.main) {
 }
 
 export default DenoManage;
+
+type X = GetCommandHandlerOptions<typeof DenoManage>;
