@@ -10,15 +10,10 @@ import { fromFileUrl, relative } from "https://deno.land/std@0.206.0/path/mod.ts
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/mod.ts";
 import { DenoManageArguments, DenoManageCommand, DenoManageFlags } from "./mod.ts";
 
-console.log(import.meta);
-console.log(import.meta.url);
-
-const BUILT_IN_BIN_PATH = `${
-  fromFileUrl(import.meta.url).replace(
-    "/deno-manage.ts",
-    "",
-  )
-}/bin`;
+const BASE_META_URL = import.meta.url.replace("/deno-manage.ts", "/bin");
+const BUILT_IN_BIN_PATH = BASE_META_URL.startsWith("https://")
+  ? BASE_META_URL
+  : fromFileUrl(import.meta.url);
 
 /**
  * An utility module for filesystem operations.
