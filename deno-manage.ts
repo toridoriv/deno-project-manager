@@ -9,6 +9,7 @@ import {
 import { fromFileUrl, relative } from "https://deno.land/std@0.206.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/mod.ts";
 import { DenoManageArguments, DenoManageCommand, DenoManageFlags } from "./mod.ts";
+import { BUILT_IN_SUBCOMMANDS } from "./subcommands.ts";
 
 const BASE_META_URL = import.meta.url.replace("/deno-manage.ts", "/bin");
 const BUILT_IN_BIN_PATH = BASE_META_URL.startsWith("https://")
@@ -86,6 +87,10 @@ const filesystem = (() => {
      * ```
      */
     getPublicPaths(directory: string) {
+      if (directory.startsWith("https://")) {
+        return BUILT_IN_SUBCOMMANDS.map((v) => directory + "/" + v);
+      }
+
       const entries = walkSync(directory, WALK_SYNC_OPTIONS);
 
       return Array.from(entries).map(getEntryPath);
