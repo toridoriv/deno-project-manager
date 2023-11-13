@@ -338,6 +338,16 @@ export const DenoManage = new Command()
     "The API token to use in Deno Deploy.",
     { prefix: "DENO_", required: true, global: true },
   )
+  .env(
+    "DENO_MANAGE_IMPORT_MAP_PATH=<path:file>",
+    "The project's import map, if any.",
+    { prefix: "DENO_MANAGE_", required: false, global: true },
+  )
+  .env(
+    "GITHUB_OUTPUT=<path:file>",
+    "The project's import map, if any.",
+    { required: false, global: true },
+  )
   .arguments("<name:string> [dirs:string[]]")
   .option("-n, --dry-run", "Dry run the process of a given command.", {
     default: false,

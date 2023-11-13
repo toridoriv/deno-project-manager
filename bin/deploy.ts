@@ -1,6 +1,13 @@
+import { loadSync } from "https://deno.land/std@0.206.0/dotenv/mod.ts";
 import { walkSync } from "https://deno.land/std@0.206.0/fs/walk.ts";
-import { join } from "https://deno.land/std@0.206.0/path/join.ts";
 import { defineCommand } from "../mod.ts";
+import { DenoDeployApi } from "./_helpers/deno-deploy-api.ts";
+import {
+  CreateDeploymentOptions,
+  createFileAsset,
+  Deployment,
+  FileAssetWithContent,
+} from "./_helpers/deployment.ts";
 
 const DEFAULT_WALK_SYNC_OPTIONS = {
   includeDirs: false,
@@ -9,7 +16,6 @@ const DEFAULT_WALK_SYNC_OPTIONS = {
 };
 
 const DEFAULT_EXCLUSIONS = "^.git, ^.vscode, .env*";
-const DEFAULT_SKIP_FILES = [/.git/, /.vscode/, /.env*/];
 
 export default defineCommand({
   name: "deploy",
@@ -27,49 +33,41 @@ export default defineCommand({
   },
   arguments: [{ name: "entry", type: "file" }],
   async action(opts, entry) {
-    const rawExclusions = `${DEFAULT_EXCLUSIONS + ", " + opts.deployExclusions}`.split(
-      ",",
-    ).map(trim);
-    const exclusionRegex = new RegExp(rawExclusions.join("|"));
-    const files = new Map<string, string>();
-    const exclusions = rawExclusions.map(toRegex);
-    const filesContent = getFilesToDeploy(exclusions);
-    const manifest = { entries: await createManifest("./", exclusionRegex, files) };
+    const api = new DenoDeployApi(opts.deployToken, opts.projectId);
+    const exclusions = `${DEFAULT_EXCLUSIONS + ", " + opts.deployExclusions}`
+      .split(",")
+      .map(trim)
+      .map(toRegex);
+    const paths = getPathsToDeploy(exclusions);
+    const options = getCreateDeploymentOptions(paths);
 
-    const request: PushDeploymentRequest = {
-      url: `file:///src/${entry}`,
-      importMapUrl: `file:///src/import-map.json`,
-      production: opts.production,
-      manifest,
-    };
-    const form = new FormData();
+    options.entryPointUrl = entry;
 
-    form.append("request", JSON.stringify(request));
-
-    for (const bytes of filesContent) {
-      form.append("file", new Blob([bytes]));
+    if (opts.importMapPath) {
+      options.importMapUrl = opts.importMapPath;
     }
 
-    spy(request);
+    console.info("ℹ️ Creating a deploy with the following options:");
+    console.info(Deno.inspect(options, { colors: true }));
 
-    const response = await fetch(
-      `https://dash.deno.com/api/projects/${opts.projectId}/deployment_with_assets`,
-      {
-        method: "POST",
-        body: form,
-        headers: {
-          authorization: `Bearer ${opts.deployToken}`,
-        },
-      },
-    );
-
-    if (response.status >= 400) {
-      spy({ body: await response.text(), status: response.status });
-      Deno.exit(1);
-    } else {
-      spy({ body: await response.text(), status: response.status });
+    if (opts.dryRun) {
       Deno.exit(0);
     }
+
+    const createDeploymentResponse = await api.createDeployment(options);
+    const deploymentDetailsResponse = await api.getDeploymentDetails(
+      createDeploymentResponse.data.id,
+    );
+    const url = getDeploymentUrl(deploymentDetailsResponse.data);
+
+    if (opts.githubOutput) {
+      Deno.writeTextFileSync(opts.githubOutput, `DEPLOY_URL=${url}`, { append: true });
+    }
+
+    console.info("✅ Deployment successful");
+    console.info(`✨ Available at: ${url}`);
+
+    Deno.exit(0);
   },
 });
 
@@ -81,103 +79,39 @@ function trim(value: string) {
   return value.trim();
 }
 
-function getFilesToDeploy(exclusions: RegExp[]) {
+function getPathsToDeploy(exclusions: RegExp[]) {
   const opts = {
     ...DEFAULT_WALK_SYNC_OPTIONS,
     skip: exclusions,
   };
 
-  const paths = Array.from(walkSync("./", opts), (entry) => entry.path);
-
-  return paths.map(Deno.readFileSync);
+  return Array.from(walkSync("./", opts), (entry) => entry.path);
 }
 
-function spy(value: unknown) {
-  return console.log(
-    Deno.inspect(value, {
-      colors: true,
-      strAbbreviateSize: 9_000,
-      breakLength: 90,
-      iterableLimit: 10,
-    }),
-  );
+function getCreateDeploymentOptions(paths: string[]): CreateDeploymentOptions {
+  const assets = paths
+    .map(
+      (path) => [path, createFileAsset(path)] as [string, FileAssetWithContent],
+    )
+    .reduce((acc, [path, asset]) => {
+      acc[path] = asset;
+      return acc;
+    }, {} as Record<string, FileAssetWithContent>);
+  const envVars = loadSync({ envPath: ".env.deployment" });
+
+  return {
+    entryPointUrl: "",
+    importMapUrl: "",
+    assets,
+    envVars,
+  };
 }
 
-async function calculateGitSha1(bytes: Uint8Array) {
-  const prefix = `blob ${bytes.byteLength}\0`;
-  const prefixBytes = new TextEncoder().encode(prefix);
-  const fullBytes = new Uint8Array(prefixBytes.byteLength + bytes.byteLength);
-  fullBytes.set(prefixBytes);
-  fullBytes.set(bytes, prefixBytes.byteLength);
-  const hashBytes = await crypto.subtle.digest("SHA-1", fullBytes);
-  const hashHex = Array.from(new Uint8Array(hashBytes))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return hashHex;
-}
-
-async function createManifest(
-  dir: string,
-  exclusionPattern: RegExp,
-  mapping: Map<string, string>,
-) {
-  const manifest: Record<string, ManifestEntry> = {};
-
-  for await (const dirEntry of Deno.readDir(dir)) {
-    const path = join(dir, dirEntry.name);
-    const shouldExclude = exclusionPattern.test(path);
-
-    if (!shouldExclude) {
-      let manifestEntry: ManifestEntry;
-
-      if (dirEntry.isFile) {
-        const data = await Deno.readFile(path);
-        const gitSha1 = await calculateGitSha1(data);
-        manifestEntry = {
-          kind: "file",
-          gitSha1,
-          size: data.byteLength,
-        };
-        mapping.set(gitSha1, path);
-      } else if (dirEntry.isDirectory) {
-        if (dirEntry.name.includes(".git")) continue;
-        manifestEntry = {
-          kind: "directory",
-          entries: await createManifest(path, exclusionPattern, mapping),
-        };
-      }
-      // @ts-ignore: ¯\_(ツ)_/¯
-      manifest[dirEntry.name] = manifestEntry;
-    }
+function getDeploymentUrl(deployment: Deployment) {
+  const domain = "https://" + deployment.domains[0];
+  if (!deployment.isProduction) {
+    return domain;
   }
 
-  return manifest;
+  return domain.replace(`-${deployment.id}`, "");
 }
-
-export interface PushDeploymentRequest {
-  url: string;
-  importMapUrl: string | null;
-  production: boolean;
-  manifest?: { entries: Record<string, ManifestEntry> };
-}
-
-export interface ManifestEntryFile {
-  kind: "file";
-  gitSha1: string;
-  size: number;
-}
-
-export interface ManifestEntryDirectory {
-  kind: "directory";
-  entries: Record<string, ManifestEntry>;
-}
-
-export interface ManifestEntrySymlink {
-  kind: "symlink";
-  target: string;
-}
-
-export type ManifestEntry =
-  | ManifestEntryFile
-  | ManifestEntryDirectory
-  | ManifestEntrySymlink;

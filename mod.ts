@@ -141,6 +141,14 @@ export type DenoManageGlobalOptions = {
    * Any files/directories matching these globs will not be uploaded during deployment.
    */
   deployExclusions: string;
+  /**
+   * The path to the import map file, if one is being used.
+   */
+  importMapPath?: string;
+  /**
+   * The path to the `GITHUB_OUTPUT` path.
+   */
+  githubOutput?: string;
 };
 
 /**
