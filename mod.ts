@@ -123,7 +123,7 @@ export type DenoManageGlobalOptions = {
   /**
    * The path to the DenoManage bin directory.
    */
-  binDir: string;
+  binDir?: string;
   /**
    * The Deno Deploy project ID.
    */

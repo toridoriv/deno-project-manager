@@ -10,14 +10,6 @@ import { fromFileUrl, relative } from "https://deno.land/std@0.206.0/path/mod.ts
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/mod.ts";
 import { DenoManageArguments, DenoManageCommand, DenoManageFlags } from "./mod.ts";
 
-type GetCommandHandlerArgs<C extends Command<any, any, any, any>> = [
-  this: C,
-  ...Parameters<Parameters<C["action"]>[0]>,
-];
-
-type GetCommandHandlerOptions<C extends Command<any, any, any, any>> =
-  GetCommandHandlerArgs<C>[1];
-
 const BUILT_IN_BIN_PATH = `${
   fromFileUrl(import.meta.url).replace(
     "/deno-manage.ts",
@@ -246,7 +238,7 @@ const main = (() => {
      * It first checks the DENO_MANAGE_BIN_DIR environment variable, and falls back
      * to "./bin" if not set.
      */
-    MANAGE_BIN_DIR: Deno.env.get("DENO_MANAGE_BIN_DIR") || "./bin",
+    MANAGE_BIN_DIR: Deno.env.get("DENO_MANAGE_BIN_DIR"),
     /**
      * Retrieves subcommand modules from a directory.
      *
@@ -321,7 +313,7 @@ export const DenoManage = new Command()
   .env(
     "DENO_MANAGE_BIN_DIR=<path:string>",
     "The scripts directory of your project",
-    { prefix: "DENO_MANAGE_", required: true, global: true },
+    { prefix: "DENO_MANAGE_", required: false, global: true },
   )
   .env(
     "DENO_MANAGE_PROJECT_ID=<id:string>",
@@ -360,9 +352,11 @@ export const DenoManage = new Command()
 const subcommands = await main.getSubcommands(BUILT_IN_BIN_PATH);
 
 if (!filesystem.isThisDirectory()) {
-  const additionalSubcommands = await main.getSubcommands(main.MANAGE_BIN_DIR);
+  if (main.MANAGE_BIN_DIR) {
+    const additionalSubcommands = await main.getSubcommands(main.MANAGE_BIN_DIR);
 
-  subcommands.push(...additionalSubcommands);
+    subcommands.push(...additionalSubcommands);
+  }
 }
 
 main.registerSubcommands(DenoManage, subcommands);
