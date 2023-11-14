@@ -4,6 +4,9 @@ import {
   walkSync,
 } from "https://deno.land/std@0.206.0/fs/walk.ts";
 import { resolve } from "https://deno.land/std@0.206.0/path/resolve.ts";
+import mainDebug from "./debug.ts";
+
+const debug = mainDebug.extend("filesystem");
 
 /**
  * Gets local file system paths recursively for a given directory.
@@ -29,6 +32,7 @@ import { resolve } from "https://deno.land/std@0.206.0/path/resolve.ts";
  * ```
  */
 export function getLocalPaths(directory: string, options?: WalkOptions) {
+  debug("Fetching paths from %s with the following options: %o", directory, options);
   const iterator = walkSync(directory, options);
 
   return Promise.resolve(Array.from(iterator, getPath.bind(null, directory)));
@@ -46,6 +50,7 @@ export function getLocalPaths(directory: string, options?: WalkOptions) {
  * ```
  */
 export async function getDefaultImport(path: string) {
+  debug("Importing module %s", path);
   const module = await import(path);
 
   return module.default;
