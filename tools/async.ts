@@ -139,7 +139,7 @@ function parseModuleUrl(raw: string) {
   const url = new URL(raw);
   const parts = url.pathname.split("/").filter(Boolean);
   const [owner, rawName, ...rest] = parts;
-  const [name, version] = rawName.split("@")[0];
+  const [name, version] = rawName.split("@");
   const dir = parts[parts.length - 1];
   const paths = rest.slice(0, -1);
 
