@@ -1,0 +1,19 @@
+{
+  "name": "deno-project-manager",
+  "displayName": "deno_project_manager",
+  "version": "0.1.5",
+  "description": "",
+  "homepage": "https://deno.land/x/deno_project_manager",
+  "author": {
+    "name": "Tori Rodriguez",
+    "email": "vrodriguezfe@icloud.com",
+    "url": "https://github.com/toridoriv"
+  },
+  "bugs": {
+    "url": "https://github.com/toridoriv/deno-project-manager/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/toridoriv/deno-project-manager.git"
+  }
+}
