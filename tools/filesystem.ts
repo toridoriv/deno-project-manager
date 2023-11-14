@@ -32,10 +32,11 @@ const debug = mainDebug.extend("filesystem");
  * ```
  */
 export function getLocalPaths(directory: string, options?: WalkOptions) {
-  debug("Fetching paths from %s with the following options: %o", directory, options);
+  debug("Fetching paths from %s", directory);
+  debug("Options: %o", options);
   const iterator = walkSync(directory, options);
 
-  return Promise.resolve(Array.from(iterator, getPath.bind(null, "file://" + directory)));
+  return Promise.resolve(Array.from(iterator, getPath.bind(null, directory)));
 }
 
 /**
@@ -50,8 +51,9 @@ export function getLocalPaths(directory: string, options?: WalkOptions) {
  * ```
  */
 export async function getDefaultImport(path: string) {
-  debug("Importing module %s", path);
-  const module = await import(path);
+  const cleanPath = path.startsWith("https://") ? path : `file://${path}`;
+  debug("Importing module %s", cleanPath);
+  const module = await import(cleanPath);
 
   return module.default;
 }

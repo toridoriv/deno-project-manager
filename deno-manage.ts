@@ -21,9 +21,11 @@ debug("MANAGE_BIN_DIR=%s", MANAGE_BIN_DIR);
 debug("BUILT_IN_BIN_PATH=%s", BUILT_IN_BIN_PATH);
 
 const subcommands =
-  await (IS_LOCAL ? getLocalPaths(BUILT_IN_BIN_PATH, WALK_SYNC_OPTIONS) : getRemotePaths(
-    BUILT_IN_BIN_PATH,
-  ))
+  await (IS_LOCAL
+    ? getLocalPaths(BUILT_IN_BIN_PATH.replace("file://", ""), WALK_SYNC_OPTIONS)
+    : getRemotePaths(
+      BUILT_IN_BIN_PATH,
+    ))
     .then(getDefaultImports)
     .then(parseRawCommands);
 
