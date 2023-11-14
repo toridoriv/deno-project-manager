@@ -25,7 +25,10 @@ type GetModuleMapConfig = Parameters<
 >[0];
 
 export async function getRemotePaths(importUrl: string) {
-  const { owner, name, dir, host, paths, version } = parseModuleUrl(importUrl);
+  const parsedUrl = parseModuleUrl(importUrl);
+  const { owner, name, dir, host, paths, version } = parsedUrl;
+
+  debug("Parsed Module URL: %o", parsedUrl);
 
   if (host.includes("github")) {
     const branch = paths.join("/");
