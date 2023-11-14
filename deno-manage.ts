@@ -2,17 +2,13 @@ import "https://deno.land/std@0.206.0/dotenv/load.ts";
 
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/command.ts";
 import { DenoManageArguments, DenoManageCommand, DenoManageFlags } from "./mod.ts";
-import packageJson from "./package.json" assert { type: "json" };
 import { getRemotePaths } from "./tools/async.ts";
 import debug from "./tools/debug.ts";
 import { getDefaultImports, getLocalPaths, isThisDirectory } from "./tools/filesystem.ts";
 
 const IS_LOCAL = import.meta.url.startsWith("file:");
 const MANAGE_BIN_DIR = Deno.env.get("DENO_MANAGE_BIN_DIR");
-const BUILT_IN_BIN_PATH = import.meta.resolve("./bin").replace("file://", "").replaceAll(
-  `@v${packageJson.version}`,
-  "",
-);
+const BUILT_IN_BIN_PATH = import.meta.resolve("./bin");
 const WALK_SYNC_OPTIONS = {
   exts: [".ts", ".js", ".mjs"],
   skip: [/_/, /\.test/],
@@ -27,7 +23,6 @@ debug("BUILT_IN_BIN_PATH=%s", BUILT_IN_BIN_PATH);
 const subcommands =
   await (IS_LOCAL ? getLocalPaths(BUILT_IN_BIN_PATH, WALK_SYNC_OPTIONS) : getRemotePaths(
     BUILT_IN_BIN_PATH,
-    packageJson.version,
   ))
     .then(getDefaultImports)
     .then(parseRawCommands);

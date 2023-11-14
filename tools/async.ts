@@ -5,53 +5,53 @@ import { Template } from "./string.ts";
 const debug = mainDebug.extend("async");
 
 const GITHUB_TEMPLATES = {
-  treePath: new Template("/repos/{owner}/{repo}/git/trees/{branch}"),
+  treePath: new Template("/repos/{owner}/{name}/git/trees/{branch}"),
   repositoryUrl: new Template(
-    "https://raw.githubusercontent.com/{owner}/{repo}/v{version}/{path}",
+    "https://raw.githubusercontent.com/{owner}/{name}/{branch}/{path}",
   ),
 };
 
-type GetTreeConfig = Parameters<typeof GITHUB_TEMPLATES["treePath"]["compile"]>[0];
+type GetTreeConfig = Parameters<
+  (typeof GITHUB_TEMPLATES)["treePath"]["compile"]
+>[0];
 
 const DENO_TEMPLATES = {
-  mapModulePath: new Template("/v2/modules/{module}/v{version}/index"),
-  moduleUrl: new Template("https://deno.land/x/{module}@v{version}{path}"),
+  mapModulePath: new Template("/v2/modules/{name}/{version}/index"),
+  moduleUrl: new Template("https://deno.land/x/{name}@{version}{path}"),
 };
 
 type GetModuleMapConfig = Parameters<
-  typeof DENO_TEMPLATES["mapModulePath"]["compile"]
+  (typeof DENO_TEMPLATES)["mapModulePath"]["compile"]
 >[0];
 
-export async function getRemotePaths(
-  importUrl: string,
-  version: string,
-) {
-  const [_host, owner, repo, ...path] = importUrl.replace("https://", "").split("/");
-  const dir = path.length === 1 ? path[0] : path[path.length - 1];
+export async function getRemotePaths(importUrl: string) {
+  const { owner, name, dir, host, paths, version } = parseModuleUrl(importUrl);
 
-  if (importUrl.includes("github")) {
-    const paths = await getRemotePathsFromGitHub(dir, {
+  if (host.includes("github")) {
+    const branch = paths.join("/");
+
+    const remotePaths = await getRemotePathsFromGitHub(dir, {
       owner,
-      repo,
-      branch: `v${version}`,
+      name,
+      branch,
     });
     const toFullPath = (path: string) =>
       GITHUB_TEMPLATES.repositoryUrl.compile({
-        version,
+        branch,
         owner,
-        repo,
+        name,
         path: `${dir}/${path}`,
       });
 
-    return paths.map(toFullPath);
-  } else if (importUrl.includes("deno.land")) {
+    return remotePaths.map(toFullPath);
+  } else if (host.includes("deno")) {
     const remotePaths = await getRemotePathsFromDeno(`/${dir}`, {
-      module: repo,
+      name,
       version,
     });
 
     const toFullPath = (path: string) =>
-      DENO_TEMPLATES.moduleUrl.compile({ module: repo, version, path });
+      DENO_TEMPLATES.moduleUrl.compile({ name, version, path });
 
     return remotePaths.map(toFullPath);
   }
@@ -59,19 +59,23 @@ export async function getRemotePaths(
   return [];
 }
 
-export async function getRemotePathsFromDeno(dir: string, config: GetModuleMapConfig) {
+export async function getRemotePathsFromDeno(
+  dir: string,
+  config: GetModuleMapConfig,
+) {
   const url = new URL(
     DENO_TEMPLATES.mapModulePath.compile(config),
     "https://apiland.deno.dev",
   );
   const response = await fetchFrom(url).then(solveJson<ModuleMapping>);
 
-  console.log(response.index);
-
   return response.index[dir];
 }
 
-export async function getRemotePathsFromGitHub(dir: string, config: GetTreeConfig) {
+export async function getRemotePathsFromGitHub(
+  dir: string,
+  config: GetTreeConfig,
+) {
   const url = new URL(
     GITHUB_TEMPLATES.treePath.compile(config),
     "https://api.github.com",
@@ -88,6 +92,20 @@ export async function getRemotePathsFromGitHub(dir: string, config: GetTreeConfi
   const pathSelector = createSelector("path");
 
   return bin.tree.map(pathSelector).filter((v) => !v.startsWith("_"));
+}
+
+export async function fetchFrom(url: string | URL, request?: RequestInit) {
+  debug("%s %s", request?.method?.toUpperCase() || "GET", url);
+
+  const response = await fetch(url, request);
+
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`, {
+      cause: `${request?.method?.toUpperCase() || "GET"} ${url}`,
+    });
+  }
+
+  return response;
 }
 
 type ModuleMapping = {
@@ -110,20 +128,17 @@ interface RepositoryTree {
   url: string;
 }
 
-export async function fetchFrom(url: string | URL, request?: RequestInit) {
-  debug("%s %s", request?.method?.toUpperCase() || "GET", url);
-
-  const response = await fetch(url, request);
-
-  if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`, {
-      cause: `${request?.method?.toUpperCase() || "GET"} ${url}`,
-    });
-  }
-
-  return response;
-}
-
 function solveJson<T>(response: Response) {
   return response.json() as Promise<T>;
+}
+
+function parseModuleUrl(raw: string) {
+  const url = new URL(raw);
+  const parts = url.pathname.split("/").filter(Boolean);
+  const [owner, rawName, ...rest] = parts;
+  const [name, version] = rawName.split("@")[0];
+  const dir = parts[parts.length - 1];
+  const paths = rest.slice(0, -1);
+
+  return { owner, name, dir, paths, host: url.host, version };
 }
