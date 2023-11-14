@@ -35,7 +35,7 @@ export function getLocalPaths(directory: string, options?: WalkOptions) {
   debug("Fetching paths from %s with the following options: %o", directory, options);
   const iterator = walkSync(directory, options);
 
-  return Promise.resolve(Array.from(iterator, getPath.bind(null, directory)));
+  return Promise.resolve(Array.from(iterator, getPath.bind(null, "file://" + directory)));
 }
 
 /**
