@@ -1,5 +1,8 @@
+import mainDebug from "./debug.ts";
 import { createSelector } from "./object.ts";
 import { Template } from "./string.ts";
+
+const debug = mainDebug.extend("async");
 
 const GITHUB_TEMPLATES = {
   treePath: new Template("/repos/{owner}/{repo}/git/trees/{branch}"),
@@ -73,6 +76,7 @@ export async function getRemotePathsFromGitHub(dir: string, config: GetTreeConfi
     GITHUB_TEMPLATES.treePath.compile(config),
     "https://api.github.com",
   );
+
   const root = await fetchFrom(url).then(solveJson<RepositoryTreeResponse>);
   const urlDir = root.tree.find((v) => v.path === dir)?.url;
 
@@ -107,6 +111,8 @@ interface RepositoryTree {
 }
 
 export async function fetchFrom(url: string | URL, request?: RequestInit) {
+  debug("%s %s", request?.method?.toUpperCase() || "GET", url);
+
   const response = await fetch(url, request);
 
   if (!response.ok) {

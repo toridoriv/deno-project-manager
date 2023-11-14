@@ -4,6 +4,7 @@ import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/command.
 import { DenoManageArguments, DenoManageCommand, DenoManageFlags } from "./mod.ts";
 import packageJson from "./package.json" assert { type: "json" };
 import { getRemotePaths } from "./tools/async.ts";
+import debug from "./tools/debug.ts";
 import { getDefaultImports, getLocalPaths, isThisDirectory } from "./tools/filesystem.ts";
 
 const IS_LOCAL = import.meta.url.startsWith("file:");
@@ -18,6 +19,10 @@ const WALK_SYNC_OPTIONS = {
   maxDepth: 10,
   includeDirs: false,
 };
+
+debug("IS_LOCAL=%j", IS_LOCAL);
+debug("MANAGE_BIN_DIR=%s", MANAGE_BIN_DIR);
+debug("BUILT_IN_BIN_PATH=%s", BUILT_IN_BIN_PATH);
 
 const subcommands =
   await (IS_LOCAL ? getLocalPaths(BUILT_IN_BIN_PATH, WALK_SYNC_OPTIONS) : getRemotePaths(
