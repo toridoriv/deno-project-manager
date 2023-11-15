@@ -41,6 +41,25 @@ if (!isThisDirectory(import.meta.url) && MANAGE_BIN_DIR) {
   subcommands.push(...additionalSubcommands);
 }
 
+/**
+ * Creates the root DenoManage CLI command.
+ *
+ * This constructs the main DenoManage command instance using the {@link Command} class from {@link [Cliffy](https://cliffy.io)}.
+ *
+ * It sets up the command name, description, version, and global options.
+ * If no argument is passed, it shows the help screen.
+ *
+ * Additional subcommands can be registered to this root command using the
+ * registerSubcommands() function.
+ *
+ * @example
+ *
+ * ```
+ * import { DenoManage } from "./deno-manage.ts";
+ *
+ * DenoManage.parse(Deno.args);
+ * ```
+ */
 export const DenoManage = new Command()
   .name("deno-manage")
   .description("A CLI project manager for Deno.")

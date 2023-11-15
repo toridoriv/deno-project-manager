@@ -51,7 +51,9 @@ export function getLocalPaths(directory: string, options?: WalkOptions) {
  * ```
  */
 export async function getDefaultImport(path: string) {
-  const cleanPath = path.startsWith("https://") ? path : `file://${path}`;
+  const cleanPath = path.startsWith("https://") || path.startsWith("./")
+    ? path
+    : `file://${path}`;
   debug("Importing module %s", cleanPath);
   const module = await import(cleanPath);
 
