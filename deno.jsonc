@@ -24,5 +24,5 @@
       ]
     }
   },
-  "tasks": {}
+  "importMap": "import-map.json"
 }

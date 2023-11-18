@@ -15,5 +15,11 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/toridoriv/deno-project-manager.git"
+  },
+  "scripts": {
+    "coverage": "deno coverage --unstable --exclude='test\\.(js|mjs|ts|jsx|tsx)$|/_tests_/' .coverage",
+    "test": "ENVIRONMENT=test deno test --allow-all --unstable --config=deno.jsonc",
+    "pretest:cov": "rm -rf .coverage",
+    "test:cov": "npm test -- --coverage=.coverage"
   }
 }
