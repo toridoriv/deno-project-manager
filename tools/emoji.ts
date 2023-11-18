@@ -1,8 +1,8 @@
+import emojiRegex from "https://esm.sh/emoji-regex@10.3.0/index.mjs";
+import { Emoji, get as getEmoji } from "https://esm.sh/github-emojis@1.0.1";
 import githubEmojis from "https://gist.githubusercontent.com/toridoriv/13b0fc654205d46bdbe62d0904993267/raw/91ebfee0098f615f0cca921a050db64c884175aa/github-emojis.json" assert {
   type: "json",
 };
-import emojiRegex from "npm:emoji-regex";
-import { Emoji, get as getEmoji } from "npm:github-emojis";
 
 /**
  * Regular expression to match emoji code strings like :unicorn:.
@@ -76,7 +76,7 @@ export const EMOJI_CODE_REGEX_GLOBAL = /:\w+:/g;
  * console.assert(replaced === "Hello - -");
  * ```
  */
-export const EMOJI_CHAR_REGEX_GLOBAL = emojiRegex();
+export const EMOJI_CHAR_REGEX_GLOBAL: RegExp = emojiRegex();
 
 /**
  * Checks if a string contains an emoji code.
