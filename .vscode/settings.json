@@ -17,5 +17,13 @@
   },
   "editor.formatOnSave": true,
   "conventionalCommits.gitmoji": true,
-  "conventionalCommits.emojiFormat": "code"
+  "conventionalCommits.emojiFormat": "code",
+  "prettier.printWidth": 90,
+  "prettier.tabWidth": 2,
+  "prettier.trailingComma": "all",
+  "prettier.semi": true,
+  "prettier.singleQuote": false,
+  "prettier.quoteProps": "consistent",
+  "prettier.bracketSameLine": true,
+  "prettier.htmlWhitespaceSensitivity": "strict"
 }
