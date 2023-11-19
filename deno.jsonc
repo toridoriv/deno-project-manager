@@ -24,5 +24,10 @@
       ]
     }
   },
-  "importMap": "import-map.json"
+  "importMap": "import-map.json",
+  "tasks": {
+    "coverage": "deno task test:cov && deno coverage --unstable --exclude='test\\.(js|mjs|ts|jsx|tsx)$|/_tests_/' .coverage",
+    "test": "ENVIRONMENT=test deno test --allow-all --unstable --config=deno.jsonc",
+    "test:cov": "rm -rf .coverage && deno task test --coverage=.coverage"
+  }
 }
