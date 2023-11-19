@@ -17,10 +17,13 @@ declare global {
      * @example
      *
      * ```ts
-     * const arr = [0, 1, false, 2, '', 3];
+     * import "./globals.ts";
+     *
+     * const arr = [0, 1, false, 2, "", 3, null];
      *
      * const filtered = arr.compact();
-     * // [1, 2, 3]
+     *
+     * console.assert(JSON.stringify(filtered) === JSON.stringify([1, 2, 3]));
      * ```
      */
     compact(): NonFalsy<T>[];
@@ -36,10 +39,13 @@ declare global {
      * @example
      *
      * ```ts
-     * const arr = ['hello ', ' world', 'foo'];
+     * import "./globals.ts";
+     *
+     * const arr = ["a", "   b", "c   ", "   d   "];
      *
      * const trimmed = arr.trim();
-     * // ['hello', 'world', 'foo']
+     *
+     * console.assert(JSON.stringify(trimmed) === JSON.stringify(["a", "b", "c", "d"]));
      * ```
      */
     trim(): T[];
@@ -51,16 +57,17 @@ declare global {
    * This class takes a template string in the constructor, with placeholders
    * enclosed in curly braces like `{name}`.
    *
-   * The compile() method takes an object of replacements, and compiles
+   * The `compile()` method takes an object of replacements, and compiles
    * the template by replacing placeholders with the replacement values.
    *
    * @example
    *
    * ```ts
+   * import "./globals.ts";
+   *
    * const template = new Template("Hello {name}!");
    *
-   * const str = template.compile({name: "John"});
-   * // "Hello John!"
+   * console.assert(template.value === "Hello {name}!");
    * ```
    */
   interface Template<T extends string> extends String {
@@ -80,15 +87,20 @@ declare global {
      * @example
      *
      * ```ts
-     * const template = new Template("Hello {name}!");
+     * import "./globals.ts";
      *
-     * const result = template.compile({name: "John"});
-     * // "Hello John!"
+     * const template = new Template("Hello {name}!");
+     * const compiled = template.compile({ name: "Peter" });
+     *
+     * console.assert(compiled === "Hello Peter!");
      * ```
      */
     compile(replacements: Expand<ExtractFromBracket<T>>): string;
   }
 
+  /**
+   * Creates a new {@link Template}.
+   */
   interface TemplateConstructor {
     new <T extends string>(value?: T): Template<T>;
     readonly prototype: Template<string>;
