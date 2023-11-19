@@ -1,7 +1,10 @@
 {
   "scopes": {
     "./_tests_/": {
-      "@tools/": "./tools/"
+      "@deps": "./_tests_/dev-deps.ts",
+      "@helpers/": "./_tests_/helpers/",
+      "@tools/": "./tools/",
+      "@utilities": "./_tests_/utilities.ts"
     }
   }
 }

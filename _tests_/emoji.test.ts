@@ -1,7 +1,7 @@
+import { describe, expect, it } from "@deps";
 import * as emoji from "@tools/emoji.ts";
 import { GITMOJIS } from "@tools/git.data.ts";
-import { expect, it } from "./dev-deps.ts";
-import { test, TestTheme } from "./utilities.ts";
+import { TestTheme } from "@utilities";
 
 const EMOJI_CODES = GITMOJIS.map((g) => g.code);
 const EMOJI_NAMES = GITMOJIS.map((g) => g.name);
@@ -29,7 +29,7 @@ const PHRASES = {
   },
 };
 
-test("The function isEmojiCode", () => {
+describe("The function isEmojiCode", () => {
   it("should return true when receives an emoji code", () => {
     EMOJI_CODES.forEach((code) => {
       const result = emoji.isEmojiCode(code);
@@ -47,7 +47,7 @@ test("The function isEmojiCode", () => {
   });
 });
 
-test("The function isEmojiChar", () => {
+describe("The function isEmojiChar", () => {
   it("should return true if receives an emoji character", () => {
     EMOJI_CHARACTERS.forEach((char) => {
       const result = emoji.isEmojiChar(char);
@@ -78,7 +78,7 @@ test("The function isEmojiChar", () => {
   });
 });
 
-test("The function emojiCharToCode", () => {
+describe("The function emojiCharToCode", () => {
   it("should convert the emojis in a string to their respective codes", () => {
     const cases: [string, string][] = [
       [PHRASES.eminem.withEmojis, PHRASES.eminem.withEmojiCodes],
@@ -106,7 +106,7 @@ test("The function emojiCharToCode", () => {
   });
 });
 
-test("The function emojiCodeToChar", () => {
+describe("The function emojiCodeToChar", () => {
   it("should convert the emoji codes in a string to their respective emojis", () => {
     const cases: [string, string][] = [
       [PHRASES.eminem.withEmojiCodes, PHRASES.eminem.withEmojis],

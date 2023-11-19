@@ -1,12 +1,4 @@
-import {
-  DescribeDefinition,
-  TestSuite,
-} from "https://deno.land/std@0.206.0/testing/bdd.ts";
-import ansicolors from "npm:ansi-colors";
-import { describe } from "./dev-deps.ts";
-
-const MESSAGE_COLORS = [ansicolors.cyan, ansicolors.yellow, ansicolors.blue];
-let messageColorIndex = 0;
+import { ansicolors } from "@deps";
 
 export const TestTheme = {
   correct: ansicolors.green,
@@ -20,40 +12,12 @@ export const Keyword = {
   false: TestTheme.wrong("false"),
 };
 
-export function colorMessage(msg: string) {
-  const fn = MESSAGE_COLORS[messageColorIndex];
+export function getTextData(path: string, delimiter = "---------") {
+  const content = Deno.readTextFileSync(`./_tests_/data${path}`);
+  const lines = content.split("\n");
+  const isDelimiter = (value: string) => value === delimiter;
+  const start = lines.findIndex(isDelimiter) + 1;
+  const end = lines.findLastIndex(isDelimiter);
 
-  if (messageColorIndex >= MESSAGE_COLORS.length - 1) {
-    messageColorIndex = 0;
-  } else {
-    messageColorIndex = messageColorIndex + 1;
-  }
-
-  return fn.bold(msg);
+  return lines.slice(start, end).join("\n");
 }
-
-export function test<T>(name: string, ...args: TestArgs<T>) {
-  // @ts-ignore: ¯\_(ツ)_/¯
-  return describe(colorMessage(name), ...args);
-}
-
-type TestArgs<T> =
-  | [options: Omit<DescribeDefinition<T>, "name">]
-  | [fn: () => void]
-  | [fn: () => void, options: Omit<DescribeDefinition<T>, "fn" | "name">]
-  | [suite: TestSuite<T>]
-  | [
-    suite: TestSuite<T>,
-    options: Omit<DescribeDefinition<T>, "name" | "suite">,
-  ]
-  | [suite: TestSuite<T>, fn: () => void]
-  | [
-    suite: TestSuite<T>,
-    options: Omit<DescribeDefinition<T>, "fn" | "name" | "suite">,
-    fn: () => void,
-  ]
-  | [
-    suite: TestSuite<T>,
-    options: Omit<DescribeDefinition<T>, "fn" | "name" | "suite">,
-    fn: () => void,
-  ];
