@@ -1,4 +1,5 @@
-import "https://deno.land/std@0.206.0/dotenv/load.ts";
+import "https://deno.land/std@0.207.0/dotenv/load.ts";
+import "./tools/globals.ts";
 
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/command.ts";
 import { DenoManageArguments, DenoManageCommand, DenoManageFlags } from "./mod.ts";

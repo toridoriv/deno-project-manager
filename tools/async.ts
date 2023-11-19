@@ -1,6 +1,8 @@
+import "./globals.ts";
+
+import { parse } from "https://deno.land/std@0.207.0/path/parse.ts";
 import mainDebug from "./debug.ts";
 import { createSelector } from "./object.ts";
-import { Template } from "./string.ts";
 
 const debug = mainDebug.extend("async");
 
@@ -37,19 +39,9 @@ type GetModuleMapConfig = Parameters<
  *
  * @param importUrl - The module import URL
  * @returns Array of file paths for the module
- *
- * @example
- *
- * ```ts
- * const paths = await getRemotePaths('https://deno.land/x/mymod@1.0.0');
- * // paths = [
- * //   'https://deno.land/x/mymod@1.0.0/src/index.ts',
- * //   'https://deno.land/x/mymod@1.0.0/src/util.ts'
- * // ]
- * ```
  */
 export async function getRemotePaths(importUrl: string) {
-  const parsedUrl = parseModuleUrl(importUrl);
+  const parsedUrl = getMetadataFromUrl(importUrl);
   const { owner, name, dir, host, paths, version } = parsedUrl;
 
   debug("Parsed Module URL: %o", parsedUrl);
@@ -98,15 +90,6 @@ export async function getRemotePaths(importUrl: string) {
  * @param dir - The directory path within the module
  * @param config - Module name and version
  * @returns Array of file paths in the directory
- *
- * @example
- *
- * ```ts
- * const paths = await getRemotePathsFromDeno("src", {
- *   name: "my_module",
- *   version: "1.0.0"
- * });
- * ```
  */
 export async function getRemotePathsFromDeno(
   dir: string,
@@ -135,16 +118,6 @@ export async function getRemotePathsFromDeno(
  * @param dir - The directory path in the repository
  * @param config - Options like owner, repo name, branch
  * @returns Array of discovered file paths
- *
- * @example
- *
- * ```ts
- * const paths = await getRemotePathsFromGitHub("src", {
- *   owner: "user",
- *   name: "repo",
- *   branch: "main"
- * });
- * ```
  */
 export async function getRemotePathsFromGitHub(
   dir: string,
@@ -186,19 +159,6 @@ export async function getRemotePathsFromGitHub(
  * @returns The successful response.
  *
  * @throws {Error} If response is not ok
- *
- * @example
- *
- * ```ts
- * const resp = await fetchFrom("https://api.github.com/repos/user/repo");
- *
- * const resp = await fetchFrom(url, {
- *   method: "POST",
- *   headers: {
- *     "Content-Type": "application/json"
- *   }
- * });
- * ```
  */
 export async function fetchFrom(url: string | URL, request?: RequestInit) {
   debug("%s %s", request?.method?.toUpperCase() || "GET", url);
@@ -212,6 +172,69 @@ export async function fetchFrom(url: string | URL, request?: RequestInit) {
   }
 
   return response;
+}
+
+/**
+ * Parses metadata about a module from its import URL.
+ *
+ * This function takes a module import URL string, and extracts metadata like the host,
+ * owner, name, version, directory path, and more.
+ *
+ * It parses the URL into components using the URL API, and returns an object containing:
+ *
+ * - owner - The owner username or organization
+ * - name - The name of the module
+ * - dir - The directory path within the module
+ * - paths - Any additional path segments
+ * - host - The hostname like "github.com" or "deno.land"
+ * - version - The version if included in a Deno URL
+ *
+ * This allows easily extracting metadata from import URLs without needing to manually parse
+ * the string.
+ *
+ * @param raw - The raw import URL string
+ * @returns An object containing parsed metadata
+ *
+ * @example
+ *
+ * ```ts
+ * import { getMetadataFromUrl } from "./async.ts";
+ *
+ * const url = "https://deno.land/x/cliffy@v0.25.7/command/mod.ts";
+ * const meta = getMetadataFromUrl(url);
+ *
+ * console.assert(meta.name === "cliffy");
+ * console.assert(meta.version === "v0.25.7");
+ * console.assert(meta.host === "deno.land");
+ * ```
+ *
+ * @example
+ *
+ * ```ts
+ * import { getMetadataFromUrl } from "./async.ts";
+ *
+ * const url =
+ *   "https://raw.githubusercontent.com/toridoriv/deno-project-manager/main/bin/deploy.ts";
+ * const meta = getMetadataFromUrl(url);
+ *
+ * console.assert(meta.name === "deno-project-manager");
+ * console.assert(meta.version === "main");
+ * console.assert(meta.host === "raw.githubusercontent.com");
+ * ```
+ */
+export function getMetadataFromUrl(raw: string) {
+  const url = new URL(raw); // from github or deno
+  const parsedPath = parse(url.pathname);
+  const [owner, rawName, ...paths] = parsedPath.dir.split("/").compact();
+  let [name, version] = rawName.split("@");
+
+  if (!version) {
+    version = paths.shift() || "";
+  }
+
+  const dir = paths.pop() || "";
+
+  return { owner, name, version, host: url.host, dir, paths };
 }
 
 type ModuleMapping = {
@@ -236,17 +259,6 @@ interface RepositoryTree {
 
 function solveJson<T>(response: Response) {
   return response.json() as Promise<T>;
-}
-
-function parseModuleUrl(raw: string) {
-  const url = new URL(raw);
-  const parts = url.pathname.split("/").filter(Boolean);
-  const [owner, rawName, ...rest] = parts;
-  const [name, version] = rawName.split("@");
-  const dir = parts[parts.length - 1];
-  const paths = rest.slice(0, -1);
-
-  return { owner, name, dir, paths, host: url.host, version };
 }
 
 function isPublic(path: string) {

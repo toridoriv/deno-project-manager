@@ -1,5 +1,7 @@
 // deno-lint-ignore-file no-explicit-any ban-types
 
+import "./tools/globals.ts";
+
 /**
  * Defines a DenoManage command.
  *
@@ -19,12 +21,29 @@
  * @example
  *
  * ```ts
- * const command = defineCommand({
- *   name: 'build',
- *   description: 'Build the project',
- *   action: () => {
- *     // Command logic
- *   }
+ * import { defineCommand } from "./mod.ts";
+ *
+ * export default defineCommand({
+ *   name: "say-hi",
+ *   description: "Says hi to someone",
+ *   arguments: [{ name: "name", type: "string" }],
+ *   flags: {
+ *     yell: {
+ *       name: "yell",
+ *       abbreviation: "y",
+ *       description: "",
+ *       type: "boolean",
+ *     },
+ *   },
+ *   action(options, name) {
+ *     let output = `Hi, ${name}`;
+ *
+ *     if (options.yell) {
+ *       output = `${output.toUpperCase()}!`;
+ *     }
+ *
+ *     console.log(output);
+ *   },
  * });
  * ```
  */
@@ -210,7 +229,6 @@ export interface DenoManageFlag {
  *  build: {
  *    name: "build",
  *    abbreviation: "b",
- *    ...
  *  },
  * };
  * ```

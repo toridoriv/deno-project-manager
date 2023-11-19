@@ -4,9 +4,22 @@ import {
   walkSync,
 } from "https://deno.land/std@0.206.0/fs/walk.ts";
 import { resolve } from "https://deno.land/std@0.206.0/path/resolve.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import mainDebug from "./debug.ts";
+import { PackageJson } from "./types.ts";
 
 const debug = mainDebug.extend("filesystem");
+
+const RawPackageJsonSchema = z
+  .object({
+    name: z.string(),
+    version: z.string(),
+  })
+  .passthrough();
+
+const PackageJsonSchema = z.custom<PackageJson>((data) =>
+  RawPackageJsonSchema.parse(data)
+);
 
 /**
  * Gets local file system paths recursively for a given directory.
@@ -20,16 +33,6 @@ const debug = mainDebug.extend("filesystem");
  * @param directory - The root directory path to traverse
  * @param options - Options to pass to walkSync
  * @returns Promise resolving to array of discovered file system paths
- *
- * @example
- *
- * ```ts
- * const paths = await getLocalPaths('./src');
- * // paths = [
- * //   '/project/src/file1.ts',
- * //   '/project/src/folder/file2.ts'
- * // ]
- * ```
  */
 export function getLocalPaths(directory: string, options?: WalkOptions) {
   debug("Fetching paths from %s", directory);
@@ -44,11 +47,6 @@ export function getLocalPaths(directory: string, options?: WalkOptions) {
  *
  * @param path - The module path to import
  * @returns The default export from the imported module
- *
- * @example
- * ```ts
- * const myModule = await getDefaultImport('./path/to/module.ts');
- * ```
  */
 export async function getDefaultImport(path: string) {
   const cleanPath = path.startsWith("https://") || path.startsWith("./")
@@ -72,15 +70,6 @@ export async function getDefaultImport(path: string) {
  *
  * @param paths - Array of module paths to import
  * @returns Promise resolving to array of imported default exports
- *
- * @example
- *
- * ```ts
- * const modules = await getDefaultImports([
- *   './module1.ts',
- *   './module2.ts'
- * ]);
- * ```
  */
 export function getDefaultImports(paths: string[]) {
   return Promise.all(paths.map(getDefaultImport));
@@ -100,18 +89,21 @@ export function getDefaultImports(paths: string[]) {
  *
  * @param importUrl - The import URL string
  * @returns True if importUrl contains current working directory
- *
- * @example
- *
- * ```ts
- * const url = './local-module.ts';
- * if (isThisDirectory(url)) {
- *   // url refers to local module
- * }
- * ```
  */
 export function isThisDirectory(importUrl: string) {
   return importUrl.includes(Deno.cwd());
+}
+
+/**
+ * Gets the `package.json` file for the current project.
+ *
+ * @returns The parsed `package.json` file for the current project.
+ */
+export function getPackageJson() {
+  const path = Deno.cwd() + "/package.json";
+  const file = Deno.readTextFileSync(path);
+
+  return PackageJsonSchema.parse(JSON.parse(file));
 }
 
 function getPath(directory: string, entry: WalkEntry) {
