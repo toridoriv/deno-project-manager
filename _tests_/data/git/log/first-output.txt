@@ -1,0 +1,23 @@
+# Output for the following command:
+# git log --first-parent --date=format:%s --pretty=format:'{"hash":"%H","id":"%h","timestamp":"%ad","author":{"name":"%an","email":"%ae"},"subject":"%s","ref":"%D"}' --abbrev-commit
+
+---------
+{"hash":"29e2c0edd3ac07cac6b8ae472aefa6537894969d","id":"29e2c0e","timestamp":"1700270284","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":recycle: (emoji) Use Esm instead of Npm to retrieve dependencies","ref":"HEAD -> main, origin/main"}
+{"hash":"9f57a4604e4295c3697e95fc098567f3f5ad6ba7","id":"9f57a46","timestamp":"1700269910","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":sparkles: Add emoji module","ref":""}
+{"hash":"1e396491865fbcce214c4b7036294197d0a54d10","id":"1e39649","timestamp":"1700095540","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":sparkles: Add git module and related tools","ref":""}
+{"hash":"70c9c705a89234f526295d1f2a6d1d4dfc6aa88d","id":"70c9c70","timestamp":"1700008176","author":{"name":"Victoria Rodriguez","email":"vrodriguezfe@icloud.com"},"subject":":recycle: (cli) Improve logic when installed from remote url (#1)","ref":""}
+{"hash":"704c75d8f005b763460c0d788948042dc5142d9a","id":"704c75d","timestamp":"1699897603","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":bug: Use different logic when importing from remote","ref":"tag: v0.1.5"}
+{"hash":"4f61a5b51a5ecc6844ef9e877df3cf4f5871bb93","id":"4f61a5b","timestamp":"1699896930","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":bug: Repair logic for built in subcommands path","ref":"tag: v0.1.4"}
+{"hash":"847c524fbd3d493ee6d2c1ffa91d5e727908c4da","id":"847c524","timestamp":"1699896532","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":monocle_face: Inspect `import.meta`","ref":"tag: v0.1.3"}
+{"hash":"e3a0e05a164d803d17324f2d6a2483dd03001157","id":"e3a0e05","timestamp":"1699894903","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":recycle: Make bin directory optional","ref":"tag: v0.1.2"}
+{"hash":"dccf257c8449a5495e1d9ab2bc62f45a91e3717d","id":"dccf257","timestamp":"1699894238","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":recycle: (deploy) Improve code organization","ref":"tag: v0.1.1"}
+{"hash":"59336624545367fda3a6fea684116af622cd5066","id":"5933662","timestamp":"1699826107","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":sparkles: Add built in commands","ref":""}
+{"hash":"77d97660a5a61b8288535efc8c88f5aca4b43510","id":"77d9766","timestamp":"1699732956","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":memo: Add documentation to all public values","ref":""}
+{"hash":"f7f12a84611e5ec125e496c8e3669f91b926efd6","id":"f7f12a8","timestamp":"1699732942","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":memo: Add documentation to all relevant values","ref":""}
+{"hash":"d52b0d0b38288f67788f4e2411667d2aa536a2a7","id":"d52b0d0","timestamp":"1699729996","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":recycle: Centralize command code into one file","ref":""}
+{"hash":"fa796daa4e2a9d33341f42e5cd1fe49bfd6317ee","id":"fa796da","timestamp":"1699658056","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":bug: Register subcommands before parsing args","ref":""}
+{"hash":"8790f06a4fa8690a566defdfe695955775be5761","id":"8790f06","timestamp":"1699656837","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":label: (module) Improve typings","ref":""}
+{"hash":"1c2f4f501e3803fe6d483a64a4295485e2a023fc","id":"1c2f4f5","timestamp":"1699656809","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":coffin: Remove unused functions","ref":""}
+{"hash":"1e5b474365f9af8cd917853fcbc88e76a9f5292b","id":"1e5b474","timestamp":"1699654973","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":coffin: Remove unnecessary comments","ref":""}
+{"hash":"4e8037a42326e75c9e68f8b3c39157f8c70a99e3","id":"4e8037a","timestamp":"1699653761","author":{"name":"toridoriv","email":"vrodriguezfe@icloud.com"},"subject":":tada: Add initial files","ref":""}
+---------

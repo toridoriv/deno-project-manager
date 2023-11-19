@@ -1,6 +1,8 @@
-import { unemojify } from "https://deno.land/x/emoji@0.3.0/mod.ts";
+import "./globals.ts";
+
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { DEFAULT_EMOJI_GROUP, EMOJI_MAP } from "./git.data.ts";
+import { emojiCharToCode } from "./emoji.ts";
+import { DEFAULT_EMOJI_GROUP, GITMOJI_GROUPS } from "./git.data.ts";
 import { executeCommand } from "./process.ts";
 import { Expand } from "./types.ts";
 
@@ -50,6 +52,22 @@ export const CommitSchema = z
   })
   .transform(parseSubject);
 
+function parseDate(date: unknown) {
+  const asNumber = Number(date);
+
+  if (!Number.isNaN(asNumber)) {
+    return new Date(asNumber * 1000);
+  }
+
+  return new Date(date as string);
+}
+
+function parseSubject<T extends { subject: string }>(commit: T) {
+  commit.subject = emojiCharToCode(commit.subject);
+
+  return commit;
+}
+
 /**
  * The Commit type, which represents a parsed Git commit.
  */
@@ -57,10 +75,10 @@ export type Commit = z.TypeOf<typeof CommitSchema>;
 
 /**
  * The type for commit labels. A commit label is either one of the labels from
- * the {@link EMOJI_MAP} constant, or one of the labels from the {@link DEFAULT_EMOJI_GROUP} constant.
+ * the {@link GITMOJI_GROUPS} constant, or one of the labels from the {@link DEFAULT_EMOJI_GROUP} constant.
  */
 export type CommitLabel =
-  | (typeof EMOJI_MAP)[number]["label"]
+  | (typeof GITMOJI_GROUPS)[number]["label"]
   | (typeof DEFAULT_EMOJI_GROUP)["label"];
 
 /**
@@ -118,10 +136,6 @@ export type ReleaseObject = {
   changes: Record<UnreleasedCommitLabel, ReleaseChanges>;
 };
 
-export const _internals = {
-  retrieveFirstCommit,
-};
-
 /**
  * Parses the output of `git log` into a list of {@link Commit} objects.
  *
@@ -134,7 +148,10 @@ export const _internals = {
  * @returns An array of {@link Commit} objects.
  */
 export function parseGitLogOutput(output: string) {
-  const rawCommits = output.split(`{"hash"`).compact().map((v) => `{"hash"${v}`);
+  const rawCommits = output
+    .split(`{"hash"`)
+    .compact()
+    .map((v) => `{"hash"${v}`);
 
   return rawCommits.map(parseCommit);
 }
@@ -157,7 +174,7 @@ export function compareCommitsByTimestamp(a: Commit, b: Commit) {
  * Gets the commit group label for the given commit subject.
  *
  * Extracts the emoji from the commit subject and looks it up
- * in the {@link EMOJI_MAP} constant to find the matching group label.
+ * in the {@link GITMOJI_GROUPS} constant to find the matching group label.
  * Falls back to {@link DEFAULT_EMOJI_GROUP} if no match.
  *
  * @param subject - The commit subject to get the group label for
@@ -172,8 +189,8 @@ export function getCommitLabel(subject: string): CommitLabel {
 
   const emoji = emojiMatch[0].replaceAll(":", "");
 
-  for (let i = 0; i < EMOJI_MAP.length; i++) {
-    const group = EMOJI_MAP[i];
+  for (let i = 0; i < GITMOJI_GROUPS.length; i++) {
+    const group = GITMOJI_GROUPS[i];
 
     if (group.emojis.includes(emoji)) {
       return group.label;
@@ -190,10 +207,7 @@ export function getCommitLabel(subject: string): CommitLabel {
  * @param previous - The previous release version string, if available
  * @returns An object representing the release with default values
  */
-export function initReleaseObject(
-  version: string,
-  previous = "",
-): ReleaseObject {
+export function initReleaseObject(version: string, previous = ""): ReleaseObject {
   return {
     owner: "",
     name: "",
@@ -206,31 +220,31 @@ export function initReleaseObject(
         label: "Breaking Changes",
         commits: [],
       },
-      Added: {
+      "Added": {
         label: "Added",
         commits: [],
       },
-      Security: {
+      "Security": {
         label: "Security",
         commits: [],
       },
-      Fixed: {
+      "Fixed": {
         label: "Fixed",
         commits: [],
       },
-      Removed: {
+      "Removed": {
         label: "Removed",
         commits: [],
       },
-      Deprecated: {
+      "Deprecated": {
         label: "Deprecated",
         commits: [],
       },
-      Changed: {
+      "Changed": {
         label: "Changed",
         commits: [],
       },
-      Miscellaneous: {
+      "Miscellaneous": {
         label: "Miscellaneous",
         commits: [],
       },
@@ -285,9 +299,7 @@ export function retrieveFirstCommit() {
     ],
   });
 
-  return parseGitLogOutput(output)
-    .sort(compareCommitsByTimestamp)
-    .toReversed()[0];
+  return parseGitLogOutput(output).sort(compareCommitsByTimestamp).toReversed()[0];
 }
 
 /**
@@ -318,7 +330,7 @@ export function getReleaseObject(version: string, commits: Commit[]) {
   }
 
   if (release.previous === "") {
-    const firstCommit = _internals.retrieveFirstCommit();
+    const firstCommit = retrieveFirstCommit();
     release.previous = firstCommit.hash;
     release.previousTag = firstCommit.hash;
   }
@@ -328,9 +340,7 @@ export function getReleaseObject(version: string, commits: Commit[]) {
 
 function parseCommit(rawCommit: unknown) {
   try {
-    return CommitSchema.parse(
-      typeof rawCommit === "string" ? JSON.parse(rawCommit) : rawCommit,
-    );
+    return CommitSchema.parse(JSON.parse(rawCommit as string));
   } catch (err) {
     throw new Error("Parse commit failed.", {
       cause: {
@@ -339,20 +349,4 @@ function parseCommit(rawCommit: unknown) {
       },
     });
   }
-}
-
-function parseDate(date: unknown) {
-  const asNumber = Number(date);
-
-  if (!Number.isNaN(asNumber)) {
-    return new Date(asNumber * 1000);
-  }
-
-  return date;
-}
-
-function parseSubject<T extends { subject: string }>(commit: T) {
-  commit.subject = unemojify(commit.subject);
-
-  return commit;
 }
